@@ -1,6 +1,3 @@
-Certainly! Here's the markdown README.md for the Generalized Hough Transform program, using the provided README.md as an example:
-
-```markdown
 # Generalized Hough Transform
 
 This program implements the Generalized Hough Transform algorithm to detect instances of a template image in a larger main image. The Generalized Hough Transform is a powerful technique for object detection and pattern matching.
