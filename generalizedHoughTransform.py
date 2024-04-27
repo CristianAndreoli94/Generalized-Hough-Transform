@@ -18,15 +18,19 @@ def buildingReferenceTable(template):
     Ix, Iy = sobel_filter(template)
     G, theta = gradient_intensity(Ix, Iy)
 
+    # Define the center point of the template
     xc, yc = template.shape[0] // 2, template.shape[1] // 2
 
+    # Initialize the reference table
     reference_table = {}
     for x in range(template.shape[0]):
         for y in range(template.shape[1]):
             if G[x, y] > 0:
+                # Calculate the vector from the center point to the edge pixel
                 r = np.sqrt((xc - x)**2 + (yc - y)**2)
                 alpha = np.arctan2(yc - y, xc - x)
 
+                # Store this vector in the table, indexed by the orientation of the edge pixel
                 orientation = theta[x, y]
                 if orientation not in reference_table:
                     reference_table[orientation] = []
@@ -48,18 +52,24 @@ def calculate_accumulator(image, reference_table):
     Ix, Iy = sobel_filter(image)
     G, theta = gradient_intensity(Ix, Iy)
 
+    # Initialize the accumulator array
     accumulator = np.zeros_like(image, dtype=np.float64)
 
+    # Get the indices of the edge pixels
     edge_pixels = np.argwhere(G > 0)
 
     for x, y in edge_pixels:
+        # Get the orientation of the edge pixel
         orientation = theta[x, y]
 
+        # Look up the corresponding (r, alpha) pairs in the r-table
         if orientation in reference_table:
             for r, alpha in reference_table[orientation]:
+                # Calculate the candidate center point
                 xc = int(x + r * np.cos(alpha))
                 yc = int(y + r * np.sin(alpha))
 
+                # Increment the vote for that candidate center point
                 if 0 <= xc < image.shape[0] and 0 <= yc < image.shape[1]:
                     accumulator[xc, yc] += 1
 
@@ -110,12 +120,15 @@ def convolution_padding(image, kernel):
     kernel_height, kernel_width = kernel.shape
     pad_height, pad_width = kernel_height // 2, kernel_width // 2
 
+    # Pad the image with zeros on all sides
     padded_image = np.pad(image, ((pad_height, pad_height), (pad_width, pad_width)), mode='constant', constant_values=0)
 
     output = np.zeros_like(image, dtype=np.float64)
     for x in range(image.shape[0]):
         for y in range(image.shape[1]):
+            # Extract the region of interest
             region = padded_image[x:x + kernel_height, y:y + kernel_width]
+            # Perform element-wise multiplication and sum the result
             output[x, y] = np.sum(region * kernel)
     return output
 
@@ -176,6 +189,7 @@ def plotBestMatches(image, template, accumulator, matched_centers, best_match):
     ax[0, 1].set_title('Template')
 
     if len(accumulator.shape) == 3:
+        # Display the maximum vote across all angles for each pixel
         ax[1, 0].imshow(np.max(accumulator, axis=2), cmap='hot')
     else:
         ax[1, 0].imshow(accumulator, cmap='hot')
@@ -186,7 +200,7 @@ def plotBestMatches(image, template, accumulator, matched_centers, best_match):
         ax[1, 1].scatter(center[1], center[0], s=100, c='green', marker='x')
     ax[1, 1].scatter(best_match[1], best_match[0], s=100, c='red', marker='x')
     ax[1, 1].set_title('Matched Locations')
-    
+
     # Save the plot
     plt.savefig('output.png')
 
@@ -210,19 +224,25 @@ referenceImageName = args.referenceImageName
 referenceImage = cv2.imread(referenceImageName)
 mainImage = cv2.imread(mainImageName)
 
+# Converting the RGB image to a grayscale image.
 referenceImage = cv2.cvtColor(referenceImage, cv2.COLOR_RGB2GRAY)
 mainImage = cv2.cvtColor(mainImage, cv2.COLOR_RGB2GRAY)
 
+# Perform edge detection on the images.
 template = cv2.Canny(referenceImage, 100, 200)
 image = cv2.Canny(mainImage, 100, 200)
 
 reference_table = buildingReferenceTable(template)
 
+# Calculate the accumulator array
 accumulator = calculate_accumulator(image, reference_table)
 
+# Find the best matched location
 best_matched_center = find_best_match(accumulator)
 
+# Find all matched locations
 matched_centers = find_all_matches(accumulator, args.threshold_ratio)
 print(len(matched_centers))
 
+# Plot the results
 plotBestMatches(image, template, accumulator, matched_centers, best_matched_center)
