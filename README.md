@@ -44,7 +44,7 @@ The program can be run from the command line with the following arguments:
 Example usage:
 
 ```bash
-python generalizeHoughTransform.py main_image.jpg reference_image.jpg --threshold_ratio 0.8
+python3 generalizeHoughTransform.py main_image.jpg reference_image.jpg --threshold_ratio 0.8
 ```
 
 ## Output
@@ -64,7 +64,7 @@ Additionally, the program prints the number of matched locations found based on 
 Here's an example result of running the Generalized Hough Transform program:
 
 ```bash
-python generalizeHoughTransform.py image.jpg template.jpg --threshold_ratio 0.9
+python3 generalizeHoughTransform.py image.jpg template.jpg --threshold_ratio 0.9
 ```
 
 
